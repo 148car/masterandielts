@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>2026 美國研究所申請計畫</title>
@@ -86,20 +87,7 @@
                     <i data-lucide="plus-circle" class="w-5 h-5"></i> 新增學校
                 </button>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left card border-separate border-spacing-0">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="p-4 border-b">學校名稱</th>
-                            <th class="p-4 border-b">系所名稱</th>
-                            <th class="p-4 border-b">截止日期</th>
-                            <th class="p-4 border-b">狀態</th>
-                            <th class="p-4 border-b text-center">操作</th>
-                        </tr>
-                    </thead>
-                    <tbody id="school-list"></tbody>
-                </table>
-            </div>
+            <div id="school-list" class="space-y-8"></div>
         </div>
 
         <!-- Tab Content: IELTS Daily Progress -->
@@ -229,12 +217,23 @@
 
     <!-- Modals -->
     <div id="schoolModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <h3 class="text-xl font-bold mb-4">新增申請學校</h3>
             <form id="school-form" class="space-y-4">
                 <input type="text" id="sch-name" placeholder="學校名稱" class="w-full border p-2 rounded" required>
-                <input type="text" id="sch-dept" placeholder="系所" class="w-full border p-2 rounded" required>
-                <input type="date" id="sch-deadline" class="w-full border p-2 rounded" required>
+                <input type="text" id="sch-dept" placeholder="系所 / 學程名稱" class="w-full border p-2 rounded" required>
+                <select id="sch-country" class="w-full border p-2 rounded">
+                    <option value="🇺🇸 美國">🇺🇸 美國</option>
+                    <option value="🇬🇧 英國">🇬🇧 英國</option>
+                    <option value="🇨🇦 加拿大">🇨🇦 加拿大</option>
+                    <option value="🇦🇺 澳洲">🇦🇺 澳洲</option>
+                    <option value="🇪🇺 歐洲">🇪🇺 歐洲</option>
+                    <option value="其他">其他</option>
+                </select>
+                <input type="text" id="sch-deadline" placeholder="截止日期（如：1月15日）" class="w-full border p-2 rounded">
+                <input type="text" id="sch-ielts" placeholder="IELTS 要求（如：7.0 overall）" class="w-full border p-2 rounded">
+                <input type="text" id="sch-duolingo" placeholder="Duolingo（如：✅ 115+ 或 ❌ 不接受）" class="w-full border p-2 rounded">
+                <input type="url" id="sch-url" placeholder="招募網頁連結 (https://...)" class="w-full border p-2 rounded">
                 <select id="sch-status" class="w-full border p-2 rounded">
                     <option value="考慮中">考慮中</option>
                     <option value="文件準備中">文件準備中</option>
@@ -277,8 +276,28 @@
     </div>
 
     <script>
+        const defaultSchools = [
+            { id: 1, country: '🇺🇸 美國', name: 'Carnegie Mellon University', dept: 'MHCI (Master of Human-Computer Interaction)', deadline: '—', ielts: '8.5 overall，各科 ≥ 8.0', duolingo: '❌ 不接受', url: 'https://www.hcii.cmu.edu/academics/mhci/admissions', status: '考慮中' },
+            { id: 2, country: '🇺🇸 美國', name: 'Carnegie Mellon University', dept: 'Master of Arts in Design', deadline: '—', ielts: '7.5 overall', duolingo: '✅ 130', url: '', status: '考慮中' },
+            { id: 3, country: '🇺🇸 美國', name: 'Carnegie Mellon University', dept: 'MIIPS (Master of Integrated Innovation for Products & Services, 16m)', deadline: '1月5日', ielts: '6.5 overall', duolingo: '✅ 105+', url: '', status: '考慮中' },
+            { id: 4, country: '🇺🇸 美國', name: 'University of Michigan', dept: 'UMSI (MSI)', deadline: '1月15日', ielts: '7.5 overall', duolingo: '❌ 不接受', url: 'https://www.si.umich.edu/programs/master-science-information/admissions', status: '考慮中' },
+            { id: 5, country: '🇺🇸 美國', name: 'Georgia Tech', dept: 'MS-HCI', deadline: '2月1日 (11:50pm EST)', ielts: '7.5 overall', duolingo: '❌ 不接受', url: 'https://mshci.gatech.edu/apply/requirements', status: '考慮中' },
+            { id: 6, country: '🇺🇸 美國', name: 'University of Washington', dept: 'MSTI (Master of Science in Technology Innovation)', deadline: 'Priority: 1月15日 / Final: 5月1日', ielts: '7.0 overall (Speaking 7.5)', duolingo: '✅ 130 (Conversation 125)', url: 'https://gix.uw.edu/graduate/msti/admissions', status: '考慮中' },
+            { id: 7, country: '🇺🇸 美國', name: 'University of Washington', dept: 'HCDE (MS)', deadline: '1月14日 (11:59pm PT)', ielts: '7.0 overall', duolingo: '✅ 105+', url: 'https://www.hcde.washington.edu/ms/admissions', status: '考慮中' },
+            { id: 8, country: '🇺🇸 美國', name: 'UC Berkeley', dept: 'MIMS (Master of Information Management and Systems)', deadline: '1月6日', ielts: '7.0 overall', duolingo: '✅ 115+', url: 'https://www.ischool.berkeley.edu/programs/mims/admissions', status: '考慮中' },
+            { id: 9, country: '🇺🇸 美國', name: 'UT Austin', dept: 'MSIS (Master of Science in Information Studies)', deadline: '1月5日', ielts: '7.0 overall (學校最低 6.5)', duolingo: '❌ 不接受', url: '', status: '考慮中' },
+            { id: 10, country: '🇺🇸 美國', name: 'Indiana University Bloomington', dept: 'HCI (MS in Human-Computer Interaction)', deadline: '—', ielts: '7.0 overall (學校最低 6.5)', duolingo: '✅ 115+', url: 'https://luddy.indiana.edu/admissions/index.html', status: '考慮中' },
+            { id: 11, country: '🇺🇸 美國', name: 'Indiana University (IUPUI)', dept: 'MS HCI (Luddy School)', deadline: '1月15日', ielts: '7.0 overall', duolingo: '—', url: '', status: '考慮中' },
+            { id: 12, country: '🇺🇸 美國', name: 'Cornell Tech', dept: 'Connective Media (IS MS)', deadline: '—', ielts: '7.0 overall', duolingo: '❌ 不接受', url: 'https://admissions.tech.cornell.edu/faq/', status: '考慮中' },
+            { id: 13, country: '🇺🇸 美國', name: 'University of Maryland', dept: 'HCIM (MS in Human-Computer Interaction)', deadline: '—', ielts: '7.0 overall (學校最低 6.5)', duolingo: '—', url: '', status: '考慮中' },
+            { id: 14, country: '🇺🇸 美國', name: 'Purdue University', dept: 'CGT UX Track (MS in Computer Graphics Technology)', deadline: '—', ielts: '6.5 overall', duolingo: '—', url: '', status: '考慮中' },
+            { id: 15, country: '🇺🇸 美國', name: 'Pratt Institute', dept: 'IXD (MS in Information Experience Design)', deadline: '—', ielts: '6.5 overall', duolingo: '✅ 105+', url: 'https://www.pratt.edu/admissions/applying/grad-admissions/', status: '考慮中' },
+            { id: 16, country: '🇺🇸 美國', name: 'Tufts University', dept: 'Human Factors (MS)', deadline: '—', ielts: '6.5 overall', duolingo: '✅ 110+', url: 'https://grad.tufts.edu/english-proficiency', status: '考慮中' },
+            { id: 17, country: '🇺🇸 美國', name: 'UIUC', dept: 'iSchool MIM (3+2)', deadline: '—', ielts: '—', duolingo: '—', url: '', status: '考慮中' },
+        ];
+
         let appData = {
-            schools: JSON.parse(localStorage.getItem('apply_schools')) || [],
+            schools: JSON.parse(localStorage.getItem('apply_schools')) || defaultSchools,
             ieltsLogs: JSON.parse(localStorage.getItem('apply_ielts')) || [],
             vocabs: JSON.parse(localStorage.getItem('apply_vocabs')) || [],
             resources: JSON.parse(localStorage.getItem('apply_res')) || [],
@@ -339,9 +358,13 @@
             e.preventDefault();
             appData.schools.push({
                 id: Date.now(),
+                country: document.getElementById('sch-country').value,
                 name: document.getElementById('sch-name').value,
                 dept: document.getElementById('sch-dept').value,
-                deadline: document.getElementById('sch-deadline').value,
+                deadline: document.getElementById('sch-deadline').value || '—',
+                ielts: document.getElementById('sch-ielts').value || '—',
+                duolingo: document.getElementById('sch-duolingo').value || '—',
+                url: document.getElementById('sch-url').value || '',
                 status: document.getElementById('sch-status').value
             });
             save(); renderSchools(); closeModal('schoolModal'); e.target.reset();
@@ -349,18 +372,55 @@
 
         function renderSchools() {
             const list = document.getElementById('school-list');
-            list.innerHTML = appData.schools.length ? '' : '<tr><td colspan="5" class="p-8 text-center text-gray-400">目前尚無學校</td></tr>';
+            if (!appData.schools.length) {
+                list.innerHTML = '<div class="text-center text-gray-400 py-12">目前尚無學校</div>';
+                return;
+            }
+            const grouped = {};
             appData.schools.forEach(s => {
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-blue-50 transition-colors";
-                tr.innerHTML = `
-                    <td class="p-4 border-b font-medium">${s.name}</td>
-                    <td class="p-4 border-b text-sm">${s.dept}</td>
-                    <td class="p-4 border-b text-sm">${s.deadline}</td>
-                    <td class="p-4 border-b"><span class="px-3 py-1 rounded-full text-xs font-bold ${getStatusStyle(s.status)}">${s.status}</span></td>
-                    <td class="p-4 border-b text-center"><button onclick="deleteSchool(${s.id})" class="text-red-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+                const c = s.country || '🇺🇸 美國';
+                if (!grouped[c]) grouped[c] = [];
+                grouped[c].push(s);
+            });
+            list.innerHTML = '';
+            Object.keys(grouped).forEach(country => {
+                const section = document.createElement('div');
+                section.innerHTML = `
+                    <h3 class="text-lg font-bold text-gray-600 mb-4 flex items-center gap-2 border-b pb-2">
+                        <span class="text-2xl">${country.split(' ')[0]}</span> ${country.split(' ').slice(1).join(' ')}
+                        <span class="text-sm font-normal text-gray-400">(${grouped[country].length} 間)</span>
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        ${grouped[country].map(s => `
+                            <div class="card mb-0 relative group border border-gray-100 hover:border-blue-200 transition-all">
+                                <button onclick="deleteSchool(${s.id})" class="absolute top-3 right-3 text-gray-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity" title="刪除">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                                <div class="flex items-start justify-between gap-2 mb-2">
+                                    <h4 class="font-bold text-gray-800 text-base leading-tight">${s.name}</h4>
+                                    <span class="flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold ${getStatusStyle(s.status)}">${s.status}</span>
+                                </div>
+                                <p class="text-sm text-blue-600 font-medium mb-3">${s.dept}</p>
+                                <div class="space-y-1.5 text-xs text-gray-500">
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-16 font-semibold text-gray-400">Deadline</span>
+                                        <span class="${s.deadline !== '—' ? 'text-red-500 font-bold' : ''}">${s.deadline}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-16 font-semibold text-gray-400">IELTS</span>
+                                        <span>${s.ielts}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="w-16 font-semibold text-gray-400">Duolingo</span>
+                                        <span>${s.duolingo}</span>
+                                    </div>
+                                </div>
+                                ${s.url ? `<a href="${s.url}" target="_blank" class="inline-flex items-center gap-1 mt-3 text-xs text-blue-500 hover:underline bg-blue-50 px-3 py-1.5 rounded-lg font-medium">🔗 招募網頁</a>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
                 `;
-                list.appendChild(tr);
+                list.appendChild(section);
             });
             initLucide();
         }
@@ -368,6 +428,7 @@
         function getStatusStyle(status) {
             if (status === '已錄取!') return 'bg-green-100 text-green-700';
             if (status === '已投遞') return 'bg-blue-100 text-blue-700';
+            if (status === '文件準備中') return 'bg-yellow-100 text-yellow-700';
             return 'bg-gray-100 text-gray-700';
         }
 
