@@ -76,6 +76,7 @@
             <button onclick="switchTab('ielts')" id="tab-ielts" class="px-6 py-2 font-medium text-gray-500 hover:text-blue-500 transition-all">每日進度</button>
             <button onclick="switchTab('vocab')" id="tab-vocab" class="px-6 py-2 font-medium text-gray-500 hover:text-blue-500 transition-all">單字簿</button>
             <button onclick="switchTab('resources')" id="tab-resources" class="px-6 py-2 font-medium text-gray-500 hover:text-blue-500 transition-all">資源連結</button>
+            <button onclick="switchTab('speaking')" id="tab-speaking" class="px-6 py-2 font-medium text-gray-500 hover:text-blue-500 transition-all">口說練習</button>
             <button onclick="switchTab('todo')" id="tab-todo" class="px-6 py-2 font-medium text-gray-500 hover:text-blue-500 transition-all">待辦事項</button>
         </div>
 
@@ -202,6 +203,86 @@
             <div id="resource-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
         </div>
 
+        <!-- Tab Content: Speaking -->
+        <div id="content-speaking" class="tab-pane hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Left: Add Form -->
+                <div class="lg:col-span-1">
+                    <div class="card sticky top-4">
+                        <h3 class="font-bold mb-4 flex items-center gap-2 text-orange-700">
+                            <i data-lucide="mic" class="w-5 h-5"></i> 新增口說題目
+                        </h3>
+                        <form id="speaking-form" class="space-y-3">
+                            <div>
+                                <label class="text-xs text-gray-500">日期</label>
+                                <input type="date" id="sp-date" class="w-full border p-2 rounded" required>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500">主題分類</label>
+                                <div class="flex gap-2">
+                                    <select id="sp-topic" class="flex-1 border p-2 rounded">
+                                        <option value="Daily Life">Daily Life</option>
+                                        <option value="Education">Education</option>
+                                        <option value="Work">Work</option>
+                                        <option value="Technology">Technology</option>
+                                        <option value="Environment">Environment</option>
+                                        <option value="Health">Health</option>
+                                        <option value="Travel">Travel</option>
+                                        <option value="Culture">Culture</option>
+                                        <option value="Media">Media</option>
+                                        <option value="Society">Society</option>
+                                        <option value="Food">Food</option>
+                                        <option value="Sports">Sports</option>
+                                        <option value="Art">Art</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                    <select id="sp-part" class="w-24 border p-2 rounded font-bold">
+                                        <option value="Part 1">P1</option>
+                                        <option value="Part 2">P2</option>
+                                        <option value="Part 3">P3</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500">題目 (Question)</label>
+                                <textarea id="sp-question" class="w-full border p-2 rounded h-16 text-sm" placeholder="如：Describe a place you like to visit." required></textarea>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500">我的回答 (Answer)</label>
+                                <textarea id="sp-answer" class="w-full border p-2 rounded h-28 text-sm" placeholder="寫下你的回答練習..."></textarea>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500">筆記 / 好用句型</label>
+                                <textarea id="sp-notes" class="w-full border p-2 rounded h-16 text-sm" placeholder="記下好用的詞彙或句型..."></textarea>
+                            </div>
+                            <button type="submit" class="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition-colors">儲存練習</button>
+                        </form>
+                    </div>
+                </div>
+                <!-- Right: List -->
+                <div class="lg:col-span-2">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 mb-4">
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-xl font-bold text-gray-700">口說練習紀錄</h2>
+                            <span id="speaking-count" class="bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">0 題</span>
+                        </div>
+                        <div class="flex gap-2 flex-wrap">
+                            <select id="sp-filter-topic" onchange="renderSpeaking()" class="border rounded-lg px-3 py-1.5 text-sm">
+                                <option value="">全部主題</option>
+                            </select>
+                            <select id="sp-filter-part" onchange="renderSpeaking()" class="border rounded-lg px-3 py-1.5 text-sm">
+                                <option value="">全部 Part</option>
+                                <option value="Part 1">Part 1</option>
+                                <option value="Part 2">Part 2</option>
+                                <option value="Part 3">Part 3</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="speaking-list" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
         <!-- Tab Content: Todo -->
         <div id="content-todo" class="tab-pane hidden">
             <div class="card max-w-2xl mx-auto">
@@ -300,6 +381,7 @@
             schools: JSON.parse(localStorage.getItem('apply_schools')) || defaultSchools,
             ieltsLogs: JSON.parse(localStorage.getItem('apply_ielts')) || [],
             vocabs: JSON.parse(localStorage.getItem('apply_vocabs')) || [],
+            speaking: JSON.parse(localStorage.getItem('apply_speaking')) || [],
             resources: JSON.parse(localStorage.getItem('apply_res')) || [],
             todos: JSON.parse(localStorage.getItem('apply_todos')) || [
                 { id: 1, text: "準備英文履歷 (CV/Resume)", done: false },
@@ -316,12 +398,14 @@
             renderAll();
             initLucide();
             document.getElementById('ielts-date').value = '2026-01-01';
+            document.getElementById('sp-date').value = new Date().toISOString().split('T')[0];
         });
 
         function save() {
             localStorage.setItem('apply_schools', JSON.stringify(appData.schools));
             localStorage.setItem('apply_ielts', JSON.stringify(appData.ieltsLogs));
             localStorage.setItem('apply_vocabs', JSON.stringify(appData.vocabs));
+            localStorage.setItem('apply_speaking', JSON.stringify(appData.speaking));
             localStorage.setItem('apply_res', JSON.stringify(appData.resources));
             localStorage.setItem('apply_todos', JSON.stringify(appData.todos));
         }
@@ -330,6 +414,7 @@
             renderSchools();
             renderIelts();
             renderVocabs();
+            renderSpeaking();
             renderResources();
             renderTodos();
         }
@@ -571,6 +656,120 @@
             initLucide();
         }
         function deleteRes(id) { appData.resources = appData.resources.filter(r => r.id !== id); save(); renderResources(); }
+
+        // Speaking Logic
+        document.getElementById('speaking-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            appData.speaking.unshift({
+                id: Date.now(),
+                date: document.getElementById('sp-date').value,
+                topic: document.getElementById('sp-topic').value,
+                part: document.getElementById('sp-part').value,
+                question: document.getElementById('sp-question').value,
+                answer: document.getElementById('sp-answer').value,
+                notes: document.getElementById('sp-notes').value
+            });
+            save(); renderSpeaking(); e.target.reset();
+            document.getElementById('sp-date').value = new Date().toISOString().split('T')[0];
+        });
+
+        function getPartColor(part) {
+            if (part === 'Part 1') return 'bg-green-100 text-green-700 border-green-200';
+            if (part === 'Part 2') return 'bg-blue-100 text-blue-700 border-blue-200';
+            return 'bg-purple-100 text-purple-700 border-purple-200';
+        }
+
+        function getTopicColor(topic) {
+            const colors = {
+                'Daily Life': 'bg-amber-50 text-amber-700',
+                'Education': 'bg-indigo-50 text-indigo-700',
+                'Work': 'bg-slate-100 text-slate-700',
+                'Technology': 'bg-cyan-50 text-cyan-700',
+                'Environment': 'bg-emerald-50 text-emerald-700',
+                'Health': 'bg-rose-50 text-rose-700',
+                'Travel': 'bg-sky-50 text-sky-700',
+                'Culture': 'bg-fuchsia-50 text-fuchsia-700',
+                'Media': 'bg-violet-50 text-violet-700',
+                'Society': 'bg-orange-50 text-orange-700',
+                'Food': 'bg-red-50 text-red-600',
+                'Sports': 'bg-lime-50 text-lime-700',
+                'Art': 'bg-pink-50 text-pink-700',
+            };
+            return colors[topic] || 'bg-gray-50 text-gray-600';
+        }
+
+        function renderSpeaking() {
+            const list = document.getElementById('speaking-list');
+            const filterTopic = document.getElementById('sp-filter-topic').value;
+            const filterPart = document.getElementById('sp-filter-part').value;
+
+            // Update topic filter options
+            const topicSelect = document.getElementById('sp-filter-topic');
+            const currentFilter = topicSelect.value;
+            const allTopics = [...new Set(appData.speaking.map(s => s.topic))].sort();
+            topicSelect.innerHTML = '<option value="">全部主題</option>' + allTopics.map(t => `<option value="${t}" ${t === currentFilter ? 'selected' : ''}>${t}</option>`).join('');
+
+            let filtered = appData.speaking;
+            if (filterTopic) filtered = filtered.filter(s => s.topic === filterTopic);
+            if (filterPart) filtered = filtered.filter(s => s.part === filterPart);
+
+            document.getElementById('speaking-count').innerText = `${appData.speaking.length} 題`;
+
+            if (!filtered.length) {
+                list.innerHTML = '<div class="text-center text-gray-300 py-12 bg-white rounded-xl border">尚無口說練習紀錄<br><span class="text-xs">從左側新增你的第一題吧！</span></div>';
+                return;
+            }
+
+            // Group by date
+            const grouped = {};
+            filtered.forEach(s => {
+                if (!grouped[s.date]) grouped[s.date] = [];
+                grouped[s.date].push(s);
+            });
+
+            list.innerHTML = Object.keys(grouped).sort().reverse().map(date => `
+                <div>
+                    <div class="flex items-center gap-2 mb-3">
+                        <div class="w-2 h-2 rounded-full bg-orange-400"></div>
+                        <h4 class="text-sm font-bold text-gray-400">${date}</h4>
+                        <span class="text-[10px] text-gray-300">(${grouped[date].length} 題)</span>
+                    </div>
+                    <div class="space-y-3 ml-4">
+                        ${grouped[date].map(s => `
+                            <div class="bg-white rounded-xl border border-gray-100 overflow-hidden group hover:border-orange-200 transition-all">
+                                <div class="p-4">
+                                    <div class="flex items-center justify-between gap-2 mb-2">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${getPartColor(s.part)}">${s.part}</span>
+                                            <span class="px-2 py-0.5 rounded text-[10px] font-medium ${getTopicColor(s.topic)}">${s.topic}</span>
+                                        </div>
+                                        <button onclick="deleteSpeaking(${s.id})" class="text-gray-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                    <p class="font-bold text-gray-800 text-sm leading-relaxed mb-2">❓ ${s.question}</p>
+                                    ${s.answer ? `
+                                        <div class="bg-gray-50 rounded-lg p-3 text-sm text-gray-600 leading-relaxed mb-2">
+                                            <div class="text-[10px] font-bold text-gray-400 mb-1">MY ANSWER</div>
+                                            <div style="white-space:pre-wrap;">${s.answer}</div>
+                                        </div>
+                                    ` : ''}
+                                    ${s.notes ? `
+                                        <div class="bg-orange-50 rounded-lg p-3 text-xs text-orange-700 leading-relaxed">
+                                            <div class="text-[10px] font-bold text-orange-400 mb-1">NOTES</div>
+                                            <div style="white-space:pre-wrap;">${s.notes}</div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+            initLucide();
+        }
+
+        function deleteSpeaking(id) { appData.speaking = appData.speaking.filter(s => s.id !== id); save(); renderSpeaking(); }
 
         // Todo Logic
         function addTodo() {
