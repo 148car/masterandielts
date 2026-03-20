@@ -7,6 +7,8 @@
     <title>超英趕美 -- 美美子 | 2027 Fall Admission Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
         body {
@@ -418,6 +420,17 @@
     </div>
 
     <script>
+        // ===== Firebase 初始化 =====
+        firebase.initializeApp({
+            apiKey: "AIzaSyDbPL2PNfkBfbkPID4EgebDDBLCxogWXI0",
+            authDomain: "masterandielts.firebaseapp.com",
+            projectId: "masterandielts",
+            storageBucket: "masterandielts.firebasestorage.app",
+            messagingSenderId: "1016912702720",
+            appId: "1:1016912702720:web:a6435dc36dce1abab1d7e5"
+        });
+        const db = firebase.firestore();
+
         const defaultSchools = [
             { id: 1, country: '🇺🇸 美國', name: 'Carnegie Mellon University', dept: 'MHCI (Master of Human-Computer Interaction)', deadline: '—', ielts: '8.5 overall，各科 ≥ 8.0', duolingo: '❌ 不接受', url: 'https://www.hcii.cmu.edu/academics/mhci/admissions', status: '考慮中' },
             { id: 2, country: '🇺🇸 美國', name: 'Carnegie Mellon University', dept: 'Master of Arts in Design', deadline: '—', ielts: '7.5 overall', duolingo: '✅ 130', url: '', status: '考慮中' },
@@ -438,38 +451,116 @@
             { id: 17, country: '🇺🇸 美國', name: 'UIUC', dept: 'iSchool MIM (3+2)', deadline: '—', ielts: '—', duolingo: '—', url: '', status: '考慮中' },
         ];
 
+        const defaultTodos = [
+            { id: 1, text: "準備英文履歷 (CV/Resume)", done: false },
+            { id: 2, text: "撰寫讀書計畫 (SOP)", done: false }
+        ];
+
         let appData = {
-            schools: JSON.parse(localStorage.getItem('apply_schools')) || defaultSchools,
-            ieltsLogs: JSON.parse(localStorage.getItem('apply_ielts')) || [],
-            vocabs: JSON.parse(localStorage.getItem('apply_vocabs')) || [],
-            speaking: JSON.parse(localStorage.getItem('apply_speaking')) || [],
-            resources: JSON.parse(localStorage.getItem('apply_res')) || [],
-            todos: JSON.parse(localStorage.getItem('apply_todos')) || [
-                { id: 1, text: "準備英文履歷 (CV/Resume)", done: false },
-                { id: 2, text: "撰寫讀書計畫 (SOP)", done: false }
-            ]
+            schools: [], ieltsLogs: [], vocabs: [],
+            speaking: [], resources: [], todos: []
+        };
+
+        // Firestore 集合名稱對應
+        const collections = {
+            schools: 'schools',
+            ieltsLogs: 'ieltsLogs',
+            vocabs: 'vocabs',
+            speaking: 'speaking',
+            resources: 'resources',
+            todos: 'todos'
         };
 
         let currentCalendarDate = new Date(2026, 0, 1);
 
         function initLucide() { if (typeof lucide !== 'undefined') lucide.createIcons(); }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            updateDateDisplay();
-            renderAll();
-            initLucide();
-            document.getElementById('ielts-date').value = '2026-01-01';
-            document.getElementById('sp-date').value = new Date().toISOString().split('T')[0];
-        });
+        // ===== Firestore 讀寫 =====
+        async function loadFromFirestore() {
+            try {
+                for (const [key, col] of Object.entries(collections)) {
+                    const snapshot = await db.collection(col).get();
+                    if (snapshot.empty) {
+                        // 第一次使用：寫入預設資料
+                        if (key === 'schools') {
+                            for (const s of defaultSchools) {
+                                await db.collection(col).doc(String(s.id)).set(s);
+                            }
+                            appData[key] = [...defaultSchools];
+                        } else if (key === 'todos') {
+                            for (const t of defaultTodos) {
+                                await db.collection(col).doc(String(t.id)).set(t);
+                            }
+                            appData[key] = [...defaultTodos];
+                        } else {
+                            appData[key] = [];
+                        }
+                    } else {
+                        appData[key] = snapshot.docs.map(doc => doc.data());
+                    }
+                }
+            } catch (err) {
+                console.error('Firestore 載入失敗，改用 localStorage:', err);
+                appData.schools = JSON.parse(localStorage.getItem('apply_schools')) || defaultSchools;
+                appData.ieltsLogs = JSON.parse(localStorage.getItem('apply_ielts')) || [];
+                appData.vocabs = JSON.parse(localStorage.getItem('apply_vocabs')) || [];
+                appData.speaking = JSON.parse(localStorage.getItem('apply_speaking')) || [];
+                appData.resources = JSON.parse(localStorage.getItem('apply_res')) || [];
+                appData.todos = JSON.parse(localStorage.getItem('apply_todos')) || defaultTodos;
+            }
+        }
 
         function save() {
+            // 同步寫入 localStorage（離線備份）
             localStorage.setItem('apply_schools', JSON.stringify(appData.schools));
             localStorage.setItem('apply_ielts', JSON.stringify(appData.ieltsLogs));
             localStorage.setItem('apply_vocabs', JSON.stringify(appData.vocabs));
             localStorage.setItem('apply_speaking', JSON.stringify(appData.speaking));
             localStorage.setItem('apply_res', JSON.stringify(appData.resources));
             localStorage.setItem('apply_todos', JSON.stringify(appData.todos));
+            // 同步寫入 Firestore
+            syncToFirestore();
         }
+
+        async function syncToFirestore() {
+            try {
+                for (const [key, col] of Object.entries(collections)) {
+                    // 清除舊資料
+                    const snapshot = await db.collection(col).get();
+                    const batch = db.batch();
+                    snapshot.docs.forEach(doc => batch.delete(doc.ref));
+                    await batch.commit();
+                    // 寫入新資料
+                    const writeBatch = db.batch();
+                    appData[key].forEach(item => {
+                        const docRef = db.collection(col).doc(String(item.id));
+                        writeBatch.set(docRef, item);
+                    });
+                    await writeBatch.commit();
+                }
+            } catch (err) {
+                console.error('Firestore 同步失敗:', err);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            updateDateDisplay();
+            // 先用 localStorage 快速顯示
+            appData.schools = JSON.parse(localStorage.getItem('apply_schools')) || defaultSchools;
+            appData.ieltsLogs = JSON.parse(localStorage.getItem('apply_ielts')) || [];
+            appData.vocabs = JSON.parse(localStorage.getItem('apply_vocabs')) || [];
+            appData.speaking = JSON.parse(localStorage.getItem('apply_speaking')) || [];
+            appData.resources = JSON.parse(localStorage.getItem('apply_res')) || [];
+            appData.todos = JSON.parse(localStorage.getItem('apply_todos')) || defaultTodos;
+            renderAll();
+            initLucide();
+            document.getElementById('ielts-date').value = '2026-01-01';
+            document.getElementById('sp-date').value = new Date().toISOString().split('T')[0];
+            // 背景從 Firestore 載入最新資料
+            await loadFromFirestore();
+            renderAll();
+            initLucide();
+        });
 
         function renderAll() {
             renderSchools();
