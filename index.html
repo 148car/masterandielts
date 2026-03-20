@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 美國研究所申請計畫</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lucide/0.263.0/lucide.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f8fafc;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .tab-active {
+            border-bottom: 3px solid #3b82f6;
+            color: #3b82f6;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+        }
+        .calendar-day {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .calendar-day:hover {
+            background-color: #ebf5ff;
+        }
+        .has-log {
+            background-color: #3b82f6;
+            color: white;
+            font-weight: bold;
+        }
+        .today {
+            border: 2px solid #3b82f6;
+            color: #3b82f6;
+        }
+        .has-log.today {
+            color: white;
+        }
+        .vocab-card:hover .delete-btn {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">🇺🇸 留學申請作戰中心</h1>
+                <p class="text-gray-500">2026 Fall Admission Tracker</p>
+            </div>
+            <div id="date-display" class="text-lg font-medium text-blue-600 bg-blue-50 px-4 py-2 rounded-full"></div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="flex border-b mb-6 overflow-x-auto whitespace-nowrap">
+            <button onclick="switchTab('schools')" id="tab-schools" class="px-6 py-2 font-medium tab-active transition-all text-blue-500">學校清單</button>
+            <button onclick="switchTab('ielts')" id="tab-ielts" class="px-6 py-2 font-medium text-gray-500 hover:text-blue-500 transition-all">每日進度</button>
+            <button onclick="switchTab('vocab')" id="tab-vocab" class="px-6 py-2 font-medium text-gray-500 hover:text-blue-500 transition-all">單字簿</button>
+            <button onclick="switchTab('resources')" id="tab-resources" class="px-6 py-2 font-medium text-gray-500 hover:text-blue-500 transition-all">資源連結</button>
+            <button onclick="switchTab('todo')" id="tab-todo" class="px-6 py-2 font-medium text-gray-500 hover:text-blue-500 transition-all">待辦事項</button>
+        </div>
+
+        <!-- Tab Content: Schools -->
+        <div id="content-schools" class="tab-pane">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-gray-700">目標學校</h2>
+                <button onclick="openModal('schoolModal')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5"></i> 新增學校
+                </button>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left card border-separate border-spacing-0">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="p-4 border-b">學校名稱</th>
+                            <th class="p-4 border-b">系所名稱</th>
+                            <th class="p-4 border-b">截止日期</th>
+                            <th class="p-4 border-b">狀態</th>
+                            <th class="p-4 border-b text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="school-list"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab Content: IELTS Daily Progress -->
+        <div id="content-ielts" class="tab-pane hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-1 space-y-6">
+                    <div class="card">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 id="calendar-month" class="font-bold text-gray-700">2026年 1月</h3>
+                            <div class="flex gap-1">
+                                <button onclick="changeMonth(-1)" class="p-1 hover:bg-gray-100 rounded text-gray-500"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                                <button onclick="changeMonth(1)" class="p-1 hover:bg-gray-100 rounded text-gray-500"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                            </div>
+                        </div>
+                        <div class="calendar-grid text-center mb-2">
+                            <div class="text-xs text-gray-400 font-bold py-1">日</div>
+                            <div class="text-xs text-gray-400 font-bold py-1">一</div>
+                            <div class="text-xs text-gray-400 font-bold py-1">二</div>
+                            <div class="text-xs text-gray-400 font-bold py-1">三</div>
+                            <div class="text-xs text-gray-400 font-bold py-1">四</div>
+                            <div class="text-xs text-gray-400 font-bold py-1">五</div>
+                            <div class="text-xs text-gray-400 font-bold py-1">六</div>
+                        </div>
+                        <div id="calendar-days" class="calendar-grid"></div>
+                        <div class="mt-4 flex justify-between items-center">
+                            <p class="text-[10px] text-gray-400 italic">點擊藍色日期查看詳情</p>
+                            <button onclick="resetToCurrentMonth()" class="text-xs text-blue-500 hover:underline">回到本月</button>
+                        </div>
+                    </div>
+                    <div class="card border-l-4 border-green-500">
+                        <h3 class="text-gray-500 text-sm">2026 累計練習天數</h3>
+                        <p id="ielts-days" class="text-3xl font-bold text-gray-800">0 天</p>
+                    </div>
+                </div>
+                <div class="lg:col-span-2">
+                    <div class="card">
+                        <h2 class="text-xl font-bold mb-4">回報進度</h2>
+                        <form id="ielts-form" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium mb-1">日期</label>
+                                <input type="date" id="ielts-date" class="w-full border rounded-lg p-2" required>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">練習總時數 (hr)</label>
+                                <input type="number" step="0.5" id="ielts-hours" class="w-full border rounded-lg p-2" placeholder="小時" required>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium mb-1">練習項目</label>
+                                <div class="flex gap-4 flex-wrap">
+                                    <label class="flex items-center gap-1"><input type="checkbox" name="skill" value="聽"> 聽</label>
+                                    <label class="flex items-center gap-1"><input type="checkbox" name="skill" value="說"> 說</label>
+                                    <label class="flex items-center gap-1"><input type="checkbox" name="skill" value="讀"> 讀</label>
+                                    <label class="flex items-center gap-1"><input type="checkbox" name="skill" value="寫"> 寫</label>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="block text-sm font-medium mb-1">備註 / 心得</label>
+                                <textarea id="ielts-note" class="w-full border rounded-lg p-2 h-20" placeholder="今天練習得如何？"></textarea>
+                            </div>
+                            <button type="submit" class="bg-blue-600 text-white p-2 rounded-lg hover:bg-blue-700">儲存紀錄</button>
+                        </form>
+                    </div>
+                    <div id="ielts-recent-logs" class="space-y-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Vocabulary Book -->
+        <div id="content-vocab" class="tab-pane hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <div class="lg:col-span-1">
+                    <div class="card sticky top-4">
+                        <h3 class="font-bold mb-4 flex items-center gap-2 text-indigo-700">
+                            <i data-lucide="plus-square" class="w-5 h-5"></i> 新增生字
+                        </h3>
+                        <form id="vocab-form" class="space-y-3">
+                            <div>
+                                <label class="text-xs text-gray-500">單字 (Word)</label>
+                                <input type="text" id="v-word" class="w-full border p-2 rounded" placeholder="如: meticulous" required>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500">詞性與定義</label>
+                                <input type="text" id="v-pos" class="w-full border p-2 rounded mb-2" placeholder="詞性 (adj.)">
+                                <input type="text" id="v-def" class="w-full border p-2 rounded" placeholder="中文含義" required>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500">例句 (Example)</label>
+                                <textarea id="v-eg" class="w-full border p-2 rounded h-20 text-sm" placeholder="輸入例句輔助記憶"></textarea>
+                            </div>
+                            <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors">加入單字庫</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="lg:col-span-3">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold text-gray-700">我的雅思單字簿</h2>
+                        <span id="vocab-count" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-medium">0 個單字</span>
+                    </div>
+                    <div id="vocab-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tab Content: Resources -->
+        <div id="content-resources" class="tab-pane hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-700">資源連結庫</h2>
+                <button onclick="openModal('resourceModal')" class="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 flex items-center gap-2">
+                    <i data-lucide="link" class="w-5 h-5"></i> 新增連結
+                </button>
+            </div>
+            <div id="resource-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </div>
+
+        <!-- Tab Content: Todo -->
+        <div id="content-todo" class="tab-pane hidden">
+            <div class="card max-w-2xl mx-auto">
+                <h2 class="text-xl font-bold mb-4">申請待辦清單</h2>
+                <div class="flex gap-2 mb-6">
+                    <input type="text" id="new-todo" class="flex-1 border rounded-lg p-2" placeholder="新增任務...">
+                    <button onclick="addTodo()" class="bg-blue-600 text-white px-6 py-2 rounded-lg">新增</button>
+                </div>
+                <div id="todo-list" class="space-y-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="schoolModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
+            <h3 class="text-xl font-bold mb-4">新增申請學校</h3>
+            <form id="school-form" class="space-y-4">
+                <input type="text" id="sch-name" placeholder="學校名稱" class="w-full border p-2 rounded" required>
+                <input type="text" id="sch-dept" placeholder="系所" class="w-full border p-2 rounded" required>
+                <input type="date" id="sch-deadline" class="w-full border p-2 rounded" required>
+                <select id="sch-status" class="w-full border p-2 rounded">
+                    <option value="考慮中">考慮中</option>
+                    <option value="文件準備中">文件準備中</option>
+                    <option value="已投遞">已投遞</option>
+                    <option value="已錄取!">已錄取!</option>
+                </select>
+                <div class="flex justify-end gap-2 mt-4">
+                    <button type="button" onclick="closeModal('schoolModal')" class="px-4 py-2 text-gray-400">取消</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded">儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="resourceModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
+            <h3 class="text-xl font-bold mb-4">新增資源連結</h3>
+            <form id="res-form" class="space-y-4">
+                <input type="text" id="res-title" placeholder="名稱" class="w-full border p-2 rounded" required>
+                <input type="url" id="res-url" placeholder="網址 (https://...)" class="w-full border p-2 rounded" required>
+                <select id="res-cat" class="w-full border p-2 rounded">
+                    <option value="學校資源">學校資源</option>
+                    <option value="雅思學習">雅思學習</option>
+                    <option value="論壇社群">論壇社群</option>
+                    <option value="其他工具">其他工具</option>
+                </select>
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('resourceModal')" class="px-4 py-2 text-gray-400">取消</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded">新增</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl max-w-sm w-full p-6 shadow-2xl relative">
+            <button onclick="closeModal('detailModal')" class="absolute top-4 right-4 text-gray-400">×</button>
+            <div id="detail-content"></div>
+        </div>
+    </div>
+
+    <script>
+        let appData = {
+            schools: JSON.parse(localStorage.getItem('apply_schools')) || [],
+            ieltsLogs: JSON.parse(localStorage.getItem('apply_ielts')) || [],
+            vocabs: JSON.parse(localStorage.getItem('apply_vocabs')) || [],
+            resources: JSON.parse(localStorage.getItem('apply_res')) || [],
+            todos: JSON.parse(localStorage.getItem('apply_todos')) || [
+                { id: 1, text: "準備英文履歷 (CV/Resume)", done: false },
+                { id: 2, text: "撰寫讀書計畫 (SOP)", done: false }
+            ]
+        };
+
+        let currentCalendarDate = new Date(2026, 0, 1);
+
+        function initLucide() { if (typeof lucide !== 'undefined') lucide.createIcons(); }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDateDisplay();
+            renderAll();
+            initLucide();
+            document.getElementById('ielts-date').value = '2026-01-01';
+        });
+
+        function save() {
+            localStorage.setItem('apply_schools', JSON.stringify(appData.schools));
+            localStorage.setItem('apply_ielts', JSON.stringify(appData.ieltsLogs));
+            localStorage.setItem('apply_vocabs', JSON.stringify(appData.vocabs));
+            localStorage.setItem('apply_res', JSON.stringify(appData.resources));
+            localStorage.setItem('apply_todos', JSON.stringify(appData.todos));
+        }
+
+        function renderAll() {
+            renderSchools();
+            renderIelts();
+            renderVocabs();
+            renderResources();
+            renderTodos();
+        }
+
+        function updateDateDisplay() {
+            const now = new Date();
+            document.getElementById('date-display').innerText = now.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`content-${tabId}`).classList.remove('hidden');
+            document.querySelectorAll('button[id^="tab-"]').forEach(btn => {
+                btn.classList.remove('tab-active', 'text-blue-500');
+                btn.classList.add('text-gray-500');
+            });
+            document.getElementById(`tab-${tabId}`).classList.add('tab-active', 'text-blue-500');
+            initLucide();
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // Schools Logic
+        document.getElementById('school-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            appData.schools.push({
+                id: Date.now(),
+                name: document.getElementById('sch-name').value,
+                dept: document.getElementById('sch-dept').value,
+                deadline: document.getElementById('sch-deadline').value,
+                status: document.getElementById('sch-status').value
+            });
+            save(); renderSchools(); closeModal('schoolModal'); e.target.reset();
+        });
+
+        function renderSchools() {
+            const list = document.getElementById('school-list');
+            list.innerHTML = appData.schools.length ? '' : '<tr><td colspan="5" class="p-8 text-center text-gray-400">目前尚無學校</td></tr>';
+            appData.schools.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-blue-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-4 border-b font-medium">${s.name}</td>
+                    <td class="p-4 border-b text-sm">${s.dept}</td>
+                    <td class="p-4 border-b text-sm">${s.deadline}</td>
+                    <td class="p-4 border-b"><span class="px-3 py-1 rounded-full text-xs font-bold ${getStatusStyle(s.status)}">${s.status}</span></td>
+                    <td class="p-4 border-b text-center"><button onclick="deleteSchool(${s.id})" class="text-red-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+                `;
+                list.appendChild(tr);
+            });
+            initLucide();
+        }
+        function deleteSchool(id) { appData.schools = appData.schools.filter(s => s.id !== id); save(); renderSchools(); }
+        function getStatusStyle(status) {
+            if (status === '已錄取!') return 'bg-green-100 text-green-700';
+            if (status === '已投遞') return 'bg-blue-100 text-blue-700';
+            return 'bg-gray-100 text-gray-700';
+        }
+
+        // IELTS Logic
+        function changeMonth(offset) { currentCalendarDate.setMonth(currentCalendarDate.getMonth() + offset); renderIelts(); }
+        function resetToCurrentMonth() { currentCalendarDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1); renderIelts(); }
+
+        document.getElementById('ielts-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const skills = Array.from(document.querySelectorAll('input[name="skill"]:checked')).map(c => c.value);
+            const date = document.getElementById('ielts-date').value;
+            appData.ieltsLogs = appData.ieltsLogs.filter(l => l.date !== date);
+            appData.ieltsLogs.unshift({
+                id: Date.now(), date, hours: document.getElementById('ielts-hours').value,
+                skills: skills.join(', '), note: document.getElementById('ielts-note').value
+            });
+            save(); renderIelts(); e.target.reset();
+        });
+
+        function renderIelts() {
+            const container = document.getElementById('calendar-days');
+            const monthLabel = document.getElementById('calendar-month');
+            const recentLogs = document.getElementById('ielts-recent-logs');
+            container.innerHTML = '';
+
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+            monthLabel.innerText = `${year}年 ${month + 1}月`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const realTodayStr = new Date().toISOString().split('T')[0];
+
+            for (let i = 0; i < firstDay; i++) container.innerHTML += '<div></div>';
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const log = appData.ieltsLogs.find(l => l.date === dateStr);
+                const el = document.createElement('div');
+                el.className = `calendar-day ${log ? 'has-log' : ''} ${dateStr === realTodayStr ? 'today' : ''}`;
+                el.innerText = d;
+                el.onclick = () => showDayDetail(dateStr);
+                container.appendChild(el);
+            }
+
+            const logs2026 = appData.ieltsLogs.filter(l => l.date.startsWith('2026'));
+            document.getElementById('ielts-days').innerText = `${new Set(logs2026.map(l => l.date)).size} 天`;
+
+            recentLogs.innerHTML = appData.ieltsLogs.slice(0, 5).map(l => `
+                <div class="bg-white p-3 rounded-lg border flex justify-between items-center text-sm">
+                    <div><span class="font-bold">${l.date}</span> | ${l.hours}hr (${l.skills})</div>
+                    <button onclick="deleteIelts(${l.id})" class="text-gray-300">×</button>
+                </div>
+            `).join('');
+        }
+
+        function deleteIelts(id) { appData.ieltsLogs = appData.ieltsLogs.filter(l => l.id !== id); save(); renderIelts(); }
+
+        function showDayDetail(dateStr) {
+            const log = appData.ieltsLogs.find(l => l.date === dateStr);
+            const content = document.getElementById('detail-content');
+            content.innerHTML = log ? `
+                <h4 class="font-bold text-lg mb-2 text-blue-600">${dateStr}</h4>
+                <div class="text-sm space-y-1">
+                    <p>時數: ${log.hours} 小時</p>
+                    <p>項目: ${log.skills}</p>
+                    <p class="mt-2 bg-gray-50 p-2 rounded italic">"${log.note || '無備註'}"</p>
+                </div>
+            ` : `
+                <h4 class="font-bold text-gray-400 mb-2">${dateStr}</h4>
+                <p class="text-center text-gray-500 py-4">無練習紀錄</p>
+                <button onclick="closeModal('detailModal'); document.getElementById('ielts-date').value='${dateStr}'; window.scrollTo(0,0);" class="w-full bg-blue-600 text-white py-2 rounded-lg">去補寫</button>
+            `;
+            openModal('detailModal');
+        }
+
+        // Vocab Logic
+        document.getElementById('vocab-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            appData.vocabs.unshift({
+                id: Date.now(), word: document.getElementById('v-word').value,
+                pos: document.getElementById('v-pos').value, def: document.getElementById('v-def').value,
+                eg: document.getElementById('v-eg').value
+            });
+            save(); renderVocabs(); e.target.reset();
+        });
+
+        function renderVocabs() {
+            const list = document.getElementById('vocab-list');
+            document.getElementById('vocab-count').innerText = `${appData.vocabs.length} 個單字`;
+            list.innerHTML = '';
+            appData.vocabs.forEach(v => {
+                const div = document.createElement('div');
+                div.className = "p-4 bg-white rounded-xl border border-gray-100 relative group vocab-card shadow-sm";
+                div.innerHTML = `
+                    <button onclick="deleteVocab(${v.id})" class="absolute top-2 right-2 text-gray-300 hover:text-red-500 opacity-0 delete-btn"><i data-lucide="x-circle" class="w-5 h-5"></i></button>
+                    <div class="flex items-baseline gap-2 mb-1">
+                        <span class="text-xl font-bold text-gray-800">${v.word}</span>
+                        <span class="text-xs text-indigo-500 italic font-medium">${v.pos}</span>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-2">${v.def}</p>
+                    ${v.eg ? `<p class="text-xs text-gray-400 bg-gray-50 p-2 rounded italic">Ex: ${v.eg}</p>` : ''}
+                `;
+                list.appendChild(div);
+            });
+            initLucide();
+        }
+        function deleteVocab(id) { appData.vocabs = appData.vocabs.filter(v => v.id !== id); save(); renderVocabs(); }
+
+        // Resources Logic
+        document.getElementById('res-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            appData.resources.push({
+                id: Date.now(), title: document.getElementById('res-title').value,
+                url: document.getElementById('res-url').value, cat: document.getElementById('res-cat').value
+            });
+            save(); renderResources(); closeModal('resourceModal'); e.target.reset();
+        });
+
+        function renderResources() {
+            const container = document.getElementById('resource-container');
+            container.innerHTML = '';
+            ['學校資源', '雅思學習', '論壇社群', '其他工具'].forEach(cat => {
+                const filtered = appData.resources.filter(r => r.cat === cat);
+                if (filtered.length === 0 && (cat === '論壇社群' || cat === '其他工具')) return;
+                const div = document.createElement('div');
+                div.className = "card";
+                div.innerHTML = `
+                    <h3 class="font-bold border-b pb-2 mb-3 text-emerald-700 flex items-center gap-2"><i data-lucide="folder" class="w-4 h-4"></i> ${cat}</h3>
+                    <div class="space-y-2">
+                        ${filtered.map(r => `
+                            <div class="flex justify-between items-center group">
+                                <a href="${r.url}" target="_blank" class="text-sm text-blue-600 hover:underline truncate mr-2">${r.title}</a>
+                                <button onclick="deleteRes(${r.id})" class="text-gray-200 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"><i data-lucide="trash" class="w-3 h-3"></i></button>
+                            </div>
+                        `).join('') || '<p class="text-xs text-gray-300 italic">尚無資源</p>'}
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            initLucide();
+        }
+        function deleteRes(id) { appData.resources = appData.resources.filter(r => r.id !== id); save(); renderResources(); }
+
+        // Todo Logic
+        function addTodo() {
+            const input = document.getElementById('new-todo');
+            if (!input.value.trim()) return;
+            appData.todos.push({ id: Date.now(), text: input.value, done: false });
+            input.value = ''; save(); renderTodos();
+        }
+        function toggleTodo(id) { const t = appData.todos.find(x => x.id === id); if(t) t.done = !t.done; save(); renderTodos(); }
+        function deleteTodo(id) { appData.todos = appData.todos.filter(x => x.id !== id); save(); renderTodos(); }
+        function renderTodos() {
+            const list = document.getElementById('todo-list');
+            list.innerHTML = appData.todos.map(t => `
+                <div class="flex items-center justify-between p-4 bg-white rounded-lg border shadow-sm ${t.done ? 'opacity-50' : ''}">
+                    <div class="flex items-center gap-3">
+                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo(${t.id})" class="w-4 h-4">
+                        <span class="${t.done ? 'line-through text-gray-400' : 'text-gray-700'}">${t.text}</span>
+                    </div>
+                    <button onclick="deleteTodo(${t.id})" class="text-gray-300 hover:text-red-500"><i data-lucide="x" class="w-4 h-4"></i></button>
+                </div>
+            `).join('');
+            initLucide();
+        }
+    </script>
+</body>
+</html>
