@@ -12,17 +12,41 @@
         body {
             font-family: 'Noto Sans TC', sans-serif;
             background-color: #f8fafc;
+            -webkit-text-size-adjust: 100%;
         }
         .card {
             background: white;
             border-radius: 12px;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        @media (min-width: 768px) {
+            .card { padding: 1.5rem; margin-bottom: 1.5rem; }
         }
         .tab-active {
             border-bottom: 3px solid #3b82f6;
             color: #3b82f6;
+        }
+        /* Tab bar mobile scroll */
+        .tab-bar {
+            display: flex;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 1rem;
+            gap: 0;
+        }
+        .tab-bar::-webkit-scrollbar { display: none; }
+        .tab-bar button {
+            flex-shrink: 0;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8rem;
+        }
+        @media (min-width: 768px) {
+            .tab-bar { margin-bottom: 1.5rem; }
+            .tab-bar button { padding: 0.5rem 1.5rem; font-size: 0.875rem; }
         }
         .calendar-grid {
             display: grid;
@@ -34,58 +58,89 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
             cursor: pointer;
             border-radius: 8px;
             transition: all 0.2s;
         }
-        .calendar-day:hover {
-            background-color: #ebf5ff;
+        @media (min-width: 768px) {
+            .calendar-day { font-size: 0.875rem; }
         }
-        .has-log {
-            background-color: #3b82f6;
-            color: white;
-            font-weight: bold;
+        .calendar-day:hover { background-color: #ebf5ff; }
+        .has-log { background-color: #3b82f6; color: white; font-weight: bold; }
+        .today { border: 2px solid #3b82f6; color: #3b82f6; }
+        .has-log.today { color: white; }
+        .vocab-card:hover .delete-btn { opacity: 1; }
+        /* Mobile collapsible form */
+        .mobile-form-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            border: 2px dashed #d1d5db;
+            color: #6b7280;
+            background: white;
+            margin-bottom: 1rem;
+            transition: all 0.2s;
         }
-        .today {
-            border: 2px solid #3b82f6;
-            color: #3b82f6;
+        .mobile-form-toggle:hover { border-color: #3b82f6; color: #3b82f6; }
+        @media (min-width: 1024px) {
+            .mobile-form-toggle { display: none; }
         }
-        .has-log.today {
-            color: white;
+        .collapsible-form {
+            display: none;
         }
-        .vocab-card:hover .delete-btn {
-            opacity: 1;
+        .collapsible-form.open {
+            display: block;
         }
+        @media (min-width: 1024px) {
+            .collapsible-form { display: block !important; }
+        }
+        /* Mobile delete always visible on touch */
+        @media (hover: none) {
+            .group .opacity-0 { opacity: 0.5 !important; }
+            .group:hover .opacity-0 { opacity: 1 !important; }
+        }
+        /* Safe area for notch phones */
+        body { padding-bottom: env(safe-area-inset-bottom, 0); }
+        /* Touch targets */
+        input, select, textarea, button { min-height: 44px; }
+        input[type="checkbox"] { min-height: auto; width: 1.25rem; height: 1.25rem; }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="px-3 py-3 md:p-8">
     <div class="max-w-6xl mx-auto">
         <!-- Header -->
-        <header class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-800">🇺🇸 留學申請作戰中心</h1>
-                <p class="text-gray-500">2026 Fall Admission Tracker</p>
+        <header class="flex flex-col md:flex-row justify-between items-center mb-4 md:mb-8 gap-2 md:gap-4">
+            <div class="text-center md:text-left">
+                <h1 class="text-xl md:text-3xl font-bold text-gray-800">🇺🇸 留學申請作戰中心</h1>
+                <p class="text-gray-500 text-xs md:text-base">2026 Fall Admission Tracker</p>
             </div>
-            <div id="date-display" class="text-lg font-medium text-blue-600 bg-blue-50 px-4 py-2 rounded-full"></div>
+            <div id="date-display" class="text-xs md:text-lg font-medium text-blue-600 bg-blue-50 px-3 py-1.5 md:px-4 md:py-2 rounded-full"></div>
         </header>
 
         <!-- Navigation Tabs -->
-        <div class="flex border-b mb-6 overflow-x-auto whitespace-nowrap">
-            <button onclick="switchTab('schools')" id="tab-schools" class="px-6 py-2 font-medium tab-active transition-all text-blue-500">學校清單</button>
-            <button onclick="switchTab('ielts')" id="tab-ielts" class="px-6 py-2 font-medium text-gray-500 hover:text-blue-500 transition-all">每日進度</button>
-            <button onclick="switchTab('vocab')" id="tab-vocab" class="px-6 py-2 font-medium text-gray-500 hover:text-blue-500 transition-all">單字簿</button>
-            <button onclick="switchTab('resources')" id="tab-resources" class="px-6 py-2 font-medium text-gray-500 hover:text-blue-500 transition-all">資源連結</button>
-            <button onclick="switchTab('speaking')" id="tab-speaking" class="px-6 py-2 font-medium text-gray-500 hover:text-blue-500 transition-all">口說練習</button>
-            <button onclick="switchTab('todo')" id="tab-todo" class="px-6 py-2 font-medium text-gray-500 hover:text-blue-500 transition-all">待辦事項</button>
+        <div class="tab-bar">
+            <button onclick="switchTab('schools')" id="tab-schools" class="font-medium tab-active transition-all text-blue-500 whitespace-nowrap">學校清單</button>
+            <button onclick="switchTab('ielts')" id="tab-ielts" class="font-medium text-gray-500 hover:text-blue-500 transition-all whitespace-nowrap">每日進度</button>
+            <button onclick="switchTab('vocab')" id="tab-vocab" class="font-medium text-gray-500 hover:text-blue-500 transition-all whitespace-nowrap">單字簿</button>
+            <button onclick="switchTab('resources')" id="tab-resources" class="font-medium text-gray-500 hover:text-blue-500 transition-all whitespace-nowrap">資源連結</button>
+            <button onclick="switchTab('speaking')" id="tab-speaking" class="font-medium text-gray-500 hover:text-blue-500 transition-all whitespace-nowrap">口說練習</button>
+            <button onclick="switchTab('todo')" id="tab-todo" class="font-medium text-gray-500 hover:text-blue-500 transition-all whitespace-nowrap">待辦事項</button>
         </div>
 
         <!-- Tab Content: Schools -->
         <div id="content-schools" class="tab-pane">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-700">目標學校</h2>
-                <button onclick="openModal('schoolModal')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2">
-                    <i data-lucide="plus-circle" class="w-5 h-5"></i> 新增學校
+                <h2 class="text-lg md:text-xl font-bold text-gray-700">目標學校</h2>
+                <button onclick="openModal('schoolModal')" class="bg-blue-600 text-white px-3 py-2 md:px-4 rounded-lg hover:bg-blue-700 flex items-center gap-1 md:gap-2 text-sm">
+                    <i data-lucide="plus-circle" class="w-4 h-4 md:w-5 md:h-5"></i> 新增
                 </button>
             </div>
             <div id="school-list" class="space-y-8"></div>
@@ -93,7 +148,7 @@
 
         <!-- Tab Content: IELTS Daily Progress -->
         <div id="content-ielts" class="tab-pane hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
                 <div class="lg:col-span-1 space-y-6">
                     <div class="card">
                         <div class="flex justify-between items-center mb-4">
@@ -158,8 +213,10 @@
 
         <!-- Tab Content: Vocabulary Book -->
         <div id="content-vocab" class="tab-pane hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
                 <div class="lg:col-span-1">
+                    <button onclick="toggleForm('vocab-form-wrapper')" class="mobile-form-toggle">＋ 新增生字</button>
+                    <div id="vocab-form-wrapper" class="collapsible-form">
                     <div class="card sticky top-4">
                         <h3 class="font-bold mb-4 flex items-center gap-2 text-indigo-700">
                             <i data-lucide="plus-square" class="w-5 h-5"></i> 新增生字
@@ -181,6 +238,7 @@
                             <button type="submit" class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors">加入單字庫</button>
                         </form>
                     </div>
+                    </div>
                 </div>
                 <div class="lg:col-span-3">
                     <div class="flex justify-between items-center mb-4">
@@ -194,20 +252,22 @@
 
         <!-- Tab Content: Resources -->
         <div id="content-resources" class="tab-pane hidden">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-bold text-gray-700">資源連結庫</h2>
-                <button onclick="openModal('resourceModal')" class="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 flex items-center gap-2">
-                    <i data-lucide="link" class="w-5 h-5"></i> 新增連結
+            <div class="flex justify-between items-center mb-4 md:mb-6">
+                <h2 class="text-lg md:text-xl font-bold text-gray-700">資源連結庫</h2>
+                <button onclick="openModal('resourceModal')" class="bg-emerald-600 text-white px-3 py-2 md:px-4 rounded-lg hover:bg-emerald-700 flex items-center gap-1 md:gap-2 text-sm">
+                    <i data-lucide="link" class="w-4 h-4 md:w-5 md:h-5"></i> 新增
                 </button>
             </div>
-            <div id="resource-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            <div id="resource-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6"></div>
         </div>
 
         <!-- Tab Content: Speaking -->
         <div id="content-speaking" class="tab-pane hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
                 <!-- Left: Add Form -->
                 <div class="lg:col-span-1">
+                    <button onclick="toggleForm('speaking-form-wrapper')" class="mobile-form-toggle">＋ 新增口說題目</button>
+                    <div id="speaking-form-wrapper" class="collapsible-form">
                     <div class="card sticky top-4">
                         <h3 class="font-bold mb-4 flex items-center gap-2 text-orange-700">
                             <i data-lucide="mic" class="w-5 h-5"></i> 新增口說題目
@@ -258,6 +318,7 @@
                             <button type="submit" class="w-full bg-orange-600 text-white py-2 rounded-lg hover:bg-orange-700 transition-colors">儲存練習</button>
                         </form>
                     </div>
+                    </div>
                 </div>
                 <!-- Right: List -->
                 <div class="lg:col-span-2">
@@ -297,8 +358,8 @@
     </div>
 
     <!-- Modals -->
-    <div id="schoolModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div id="schoolModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-end md:items-center justify-center z-50">
+        <div class="bg-white rounded-t-2xl md:rounded-xl w-full md:max-w-md p-5 md:p-6 shadow-2xl max-h-[85vh] overflow-y-auto">
             <h3 class="text-xl font-bold mb-4">新增申請學校</h3>
             <form id="school-form" class="space-y-4">
                 <input type="text" id="sch-name" placeholder="學校名稱" class="w-full border p-2 rounded" required>
@@ -329,8 +390,8 @@
         </div>
     </div>
 
-    <div id="resourceModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl">
+    <div id="resourceModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-end md:items-center justify-center z-50">
+        <div class="bg-white rounded-t-2xl md:rounded-xl w-full md:max-w-md p-5 md:p-6 shadow-2xl max-h-[85vh] overflow-y-auto">
             <h3 class="text-xl font-bold mb-4">新增資源連結</h3>
             <form id="res-form" class="space-y-4">
                 <input type="text" id="res-title" placeholder="名稱" class="w-full border p-2 rounded" required>
@@ -349,8 +410,8 @@
         </div>
     </div>
 
-    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-sm w-full p-6 shadow-2xl relative">
+    <div id="detailModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-end md:items-center justify-center z-50">
+        <div class="bg-white rounded-t-2xl md:rounded-xl w-full md:max-w-sm p-5 md:p-6 shadow-2xl relative">
             <button onclick="closeModal('detailModal')" class="absolute top-4 right-4 text-gray-400">×</button>
             <div id="detail-content"></div>
         </div>
@@ -437,6 +498,10 @@
 
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function toggleForm(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('open');
+        }
 
         // Schools Logic
         document.getElementById('school-form').addEventListener('submit', (e) => {
@@ -598,6 +663,7 @@
                 eg: document.getElementById('v-eg').value
             });
             save(); renderVocabs(); e.target.reset();
+            if (window.innerWidth < 1024) { document.getElementById('vocab-form-wrapper').classList.remove('open'); }
         });
 
         function renderVocabs() {
@@ -671,6 +737,7 @@
             });
             save(); renderSpeaking(); e.target.reset();
             document.getElementById('sp-date').value = new Date().toISOString().split('T')[0];
+            if (window.innerWidth < 1024) { document.getElementById('speaking-form-wrapper').classList.remove('open'); }
         });
 
         function getPartColor(part) {
