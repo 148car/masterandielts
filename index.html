@@ -564,22 +564,46 @@
         }
 
         document.addEventListener('DOMContentLoaded', async () => {
-            updateDateDisplay();
-            // 先用 localStorage 快速顯示
-            appData.schools = JSON.parse(localStorage.getItem('apply_schools')) || defaultSchools;
-            appData.ieltsLogs = JSON.parse(localStorage.getItem('apply_ielts')) || [];
-            appData.vocabs = JSON.parse(localStorage.getItem('apply_vocabs')) || [];
-            appData.speaking = JSON.parse(localStorage.getItem('apply_speaking')) || [];
-            appData.resources = JSON.parse(localStorage.getItem('apply_res')) || [];
-            appData.todos = JSON.parse(localStorage.getItem('apply_todos')) || defaultTodos;
-            renderAll();
-            initLucide();
-            document.getElementById('ielts-date').value = '2026-01-01';
-            document.getElementById('sp-date').value = new Date().toISOString().split('T')[0];
-            // 背景從 Firestore 載入最新資料
-            await loadFromFirestore();
-            renderAll();
-            initLucide();
+            console.log('🚀 DOMContentLoaded started');
+            console.log('📍 appData initial:', appData);
+            console.log('🔍 school-list element:', document.getElementById('school-list'));
+            
+            try {
+                updateDateDisplay();
+                console.log('✅ updateDateDisplay done');
+                
+                // 先用 localStorage 快速顯示
+                appData.schools = JSON.parse(localStorage.getItem('apply_schools')) || defaultSchools;
+                appData.ieltsLogs = JSON.parse(localStorage.getItem('apply_ielts')) || [];
+                appData.vocabs = JSON.parse(localStorage.getItem('apply_vocabs')) || [];
+                appData.speaking = JSON.parse(localStorage.getItem('apply_speaking')) || [];
+                appData.resources = JSON.parse(localStorage.getItem('apply_res')) || [];
+                appData.todos = JSON.parse(localStorage.getItem('apply_todos')) || defaultTodos;
+                console.log('✅ localStorage loaded:', appData);
+                
+                renderAll();
+                console.log('✅ renderAll done');
+                
+                initLucide();
+                console.log('✅ initLucide done');
+                
+                document.getElementById('ielts-date').value = '2026-01-01';
+                document.getElementById('sp-date').value = new Date().toISOString().split('T')[0];
+                console.log('✅ date fields set');
+                
+                // 背景從 Firestore 載入最新資料
+                console.log('⏳ Loading from Firestore...');
+                await loadFromFirestore();
+                console.log('✅ Firestore loaded:', appData);
+                
+                renderAll();
+                initLucide();
+                console.log('✅ Final render complete');
+                console.log('🎉 Page fully loaded!');
+            } catch (err) {
+                console.error('❌ Error during initialization:', err);
+                console.error('Stack:', err.stack);
+            }
         });
 
         function renderAll() {
