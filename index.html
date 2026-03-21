@@ -124,8 +124,15 @@
         }
         .phrase-preview {
             display: block;
+            word-wrap: break-word;
             word-break: break-word;
-            hyphens: auto;
+            white-space: pre-wrap;
+            overflow-wrap: break-word;
+            line-height: 1.8;
+            font-size: 1rem;
+            width: 100%;
+            margin: 0;
+            padding: 0;
         }
         /* Custom Scrollbar */
         ::-webkit-scrollbar {
@@ -1281,13 +1288,13 @@
             list.innerHTML = appData.phrases.map((p, idx) => {
                 const expandId = `phrase-expand-${p.id}`;
                 return `
-                    <div class="phrase-card bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl p-5 shadow-sm hover:shadow-lg transition-all group border border-amber-200 flex flex-col h-full">
+                    <div class="phrase-card bg-gradient-to-br from-amber-50 to-amber-100 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all group border border-amber-200 flex flex-col h-full min-w-0">
                         <!-- Quote Mark -->
-                        <div class="text-5xl text-amber-300 leading-none mb-3">❝</div>
+                        <div class="text-5xl text-amber-300 leading-none mb-4">❝</div>
                         
                         <!-- Main Text -->
-                        <div class="text-base leading-relaxed text-amber-950 font-serif mb-4 flex-grow">
-                            <span class="phrase-preview">"${p.text}"</span>
+                        <div class="mb-4 flex-grow min-w-0">
+                            <p class="phrase-preview text-amber-950 font-serif leading-loose text-base">"${p.text}"</p>
                         </div>
                         
                         <!-- Author -->
