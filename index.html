@@ -1159,30 +1159,34 @@
                     <div class="space-y-3 ml-4">
                         ${grouped[date].map(s => `
                             <div class="bg-white rounded-xl border border-gray-100 overflow-hidden group hover:border-orange-200 transition-all">
-                                <div class="p-4">
-                                    <div class="flex items-center justify-between gap-2 mb-2">
-                                        <div class="flex items-center gap-2 flex-wrap">
-                                            <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${getPartColor(s.part)}">${s.part}</span>
-                                            <span class="px-2 py-0.5 rounded text-[10px] font-medium ${getTopicColor(s.topic)}">${s.topic}</span>
+                                <details class="p-4" ${s.answer || s.notes ? '' : 'open'}>
+                                    <summary class="flex items-center justify-between cursor-pointer list-none">
+                                        <div class="flex flex-col">
+                                            <div class="flex items-center gap-2 mb-1">
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${getPartColor(s.part)}">${s.part}</span>
+                                                <span class="px-2 py-0.5 rounded text-[10px] font-medium ${getTopicColor(s.topic)}">${s.topic}</span>
+                                            </div>
+                                            <p class="font-bold text-gray-800 text-sm leading-relaxed">❓ ${s.question}</p>
                                         </div>
-                                        <button onclick="deleteSpeaking(${s.id})" class="text-gray-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                        </button>
+                                        <div class="text-gray-400">▾</div>
+                                    </summary>
+                                    <div class="mt-3 border-t border-gray-100 pt-3">
+                                        ${s.answer ? `
+                                            <div class="bg-gray-50 rounded-lg p-3 text-sm text-gray-600 leading-relaxed mb-2">
+                                                <div class="text-[10px] font-bold text-gray-400 mb-1">MY ANSWER</div>
+                                                <div style="white-space:pre-wrap;">${s.answer}</div>
+                                            </div>
+                                        ` : '<div class="text-xs text-gray-400 mb-2">暫無回答內容</div>'}
+                                        ${s.notes ? `
+                                            <div class="bg-orange-50 rounded-lg p-3 text-xs text-orange-700 leading-relaxed">
+                                                <div class="text-[10px] font-bold text-orange-400 mb-1">NOTES</div>
+                                                <div style="white-space:pre-wrap;">${s.notes}</div>
+                                            </div>
+                                        ` : ''}
+                                        <button onclick="deleteSpeaking(${s.id})" class="mt-2 text-left text-red-500 text-xs hover:text-red-600">刪除此題</button>
                                     </div>
-                                    <p class="font-bold text-gray-800 text-sm leading-relaxed mb-2">❓ ${s.question}</p>
-                                    ${s.answer ? `
-                                        <div class="bg-gray-50 rounded-lg p-3 text-sm text-gray-600 leading-relaxed mb-2">
-                                            <div class="text-[10px] font-bold text-gray-400 mb-1">MY ANSWER</div>
-                                            <div style="white-space:pre-wrap;">${s.answer}</div>
-                                        </div>
-                                    ` : ''}
-                                    ${s.notes ? `
-                                        <div class="bg-orange-50 rounded-lg p-3 text-xs text-orange-700 leading-relaxed">
-                                            <div class="text-[10px] font-bold text-orange-400 mb-1">NOTES</div>
-                                            <div style="white-space:pre-wrap;">${s.notes}</div>
-                                        </div>
-                                    ` : ''}
-                                </div>
+                                </details>
+                            </div>
                             </div>
                         `).join('')}
                     </div>
