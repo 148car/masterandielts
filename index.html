@@ -442,7 +442,7 @@
             <div id="writing-essays-section" class="space-y-4">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg md:text-xl font-bold text-gray-700">我的作文</h2>
-                    <button onclick="editingWritingId = null; document.querySelector('#writingModal h3').textContent = '新增作文'; document.querySelector('#writing-form button[type=\"submit\"]').textContent = '儲存作文'; openModal('writingModal')" class="bg-blue-600 text-white px-3 py-2 md:px-4 rounded-lg hover:bg-blue-700 flex items-center gap-1 md:gap-2 text-sm">
+                    <button onclick="prepareWritingModal()" class="bg-blue-600 text-white px-3 py-2 md:px-4 rounded-lg hover:bg-blue-700 flex items-center gap-1 md:gap-2 text-sm">
                         <i data-lucide="plus-circle" class="w-4 h-4 md:w-5 md:h-5"></i> 新增作文
                     </button>
                 </div>
@@ -805,6 +805,16 @@
 
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function prepareWritingModal() {
+            editingWritingId = null;
+            document.getElementById('writingModal').querySelector('h3').textContent = '新增作文';
+            const form = document.getElementById('writing-form');
+            form.reset();
+            const submitBtn = form.querySelector('button[type=submit]');
+            if (submitBtn) submitBtn.textContent = '儲存作文';
+            document.getElementById('w-image-preview').innerHTML = '';
+            openModal('writingModal');
+        }
         function toggleForm(id) {
             const el = document.getElementById(id);
             el.classList.toggle('open');
