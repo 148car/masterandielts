@@ -442,7 +442,7 @@
             <div id="writing-essays-section" class="space-y-4">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-lg md:text-xl font-bold text-gray-700">我的作文</h2>
-                    <button onclick="openModal('writingModal')" class="bg-blue-600 text-white px-3 py-2 md:px-4 rounded-lg hover:bg-blue-700 flex items-center gap-1 md:gap-2 text-sm">
+                    <button onclick="editingWritingId = null; document.querySelector('#writingModal h3').textContent = '新增作文'; document.querySelector('#writing-form button[type=\"submit\"]').textContent = '儲存作文'; openModal('writingModal')" class="bg-blue-600 text-white px-3 py-2 md:px-4 rounded-lg hover:bg-blue-700 flex items-center gap-1 md:gap-2 text-sm">
                         <i data-lucide="plus-circle" class="w-4 h-4 md:w-5 md:h-5"></i> 新增作文
                     </button>
                 </div>
@@ -638,6 +638,8 @@
             speaking: [], resources: [], todos: [],
             writings: [], phrases: [], synonyms: []
         };
+
+        let editingWritingId = null;
 
         // Firestore 集合名稱對應
         const collections = {
@@ -1216,17 +1218,40 @@
                     reader.readAsDataURL(imageInput.files[0]);
                 });
             }
-            appData.writings.push({
-                id: Date.now(),
-                date: new Date().toISOString().split('T')[0],
-                title: document.getElementById('w-title').value,
-                type: document.getElementById('w-type').value,
-                topic: document.getElementById('w-topic').value,
-                content: document.getElementById('w-content').value,
-                image: imageData,
-                notes: document.getElementById('w-notes').value
-            });
+            
+            if (editingWritingId !== null) {
+                // Edit existing writing
+                const index = appData.writings.findIndex(w => w.id === editingWritingId);
+                if (index !== -1) {
+                    appData.writings[index] = {
+                        ...appData.writings[index],
+                        title: document.getElementById('w-title').value,
+                        type: document.getElementById('w-type').value,
+                        topic: document.getElementById('w-topic').value,
+                        content: document.getElementById('w-content').value,
+                        image: imageData || appData.writings[index].image, // Keep existing image if no new one
+                        notes: document.getElementById('w-notes').value
+                    };
+                }
+                editingWritingId = null;
+            } else {
+                // Add new writing
+                appData.writings.push({
+                    id: Date.now(),
+                    date: new Date().toISOString().split('T')[0],
+                    title: document.getElementById('w-title').value,
+                    type: document.getElementById('w-type').value,
+                    topic: document.getElementById('w-topic').value,
+                    content: document.getElementById('w-content').value,
+                    image: imageData,
+                    notes: document.getElementById('w-notes').value
+                });
+            }
+            
             save(); renderWriting(); closeModal('writingModal'); e.target.reset(); document.getElementById('w-image-preview').innerHTML = '';
+            // Reset modal title and button
+            document.querySelector('#writingModal h3').textContent = '新增作文';
+            document.querySelector('#writing-form button[type="submit"]').textContent = '儲存作文';
         });
 
         function renderWriting() {
@@ -1246,9 +1271,14 @@
                                 <span class="text-xs text-gray-400">${w.date}</span>
                             </div>
                         </div>
-                        <button onclick="deleteWriting(${w.id})" class="text-gray-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <i data-lucide="trash-2" class="w-4 h-4"></i>
-                        </button>
+                        <div class="flex gap-2">
+                            <button onclick="editWriting(${w.id})" class="text-gray-200 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <i data-lucide="edit" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="deleteWriting(${w.id})" class="text-gray-200 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
                     </div>
                     ${w.image ? `<div class="mb-4 rounded-lg overflow-hidden"><img src="${w.image}" alt="essay image" class="w-full max-h-80 object-cover"></div>` : ''}
                     <div class="bg-gray-50 rounded-lg p-4 text-sm text-gray-600 leading-relaxed mb-3">
@@ -1263,6 +1293,32 @@
         function deleteWriting(id) { 
             appData.writings = appData.writings.filter(w => w.id !== id); 
             save(); renderWriting(); 
+        }
+
+        function editWriting(id) {
+            const writing = appData.writings.find(w => w.id === id);
+            if (!writing) return;
+            
+            // Fill the form
+            document.getElementById('w-title').value = writing.title;
+            document.getElementById('w-type').value = writing.type;
+            document.getElementById('w-topic').value = writing.topic || '';
+            document.getElementById('w-content').value = writing.content;
+            document.getElementById('w-notes').value = writing.notes || '';
+            
+            // Handle image preview
+            if (writing.image) {
+                document.getElementById('w-image-preview').innerHTML = `<img src="${writing.image}" alt="preview" class="w-full max-h-40 object-contain rounded">`;
+            } else {
+                document.getElementById('w-image-preview').innerHTML = '';
+            }
+            
+            // Set editing mode
+            editingWritingId = id;
+            document.querySelector('#writingModal h3').textContent = '編輯作文';
+            document.querySelector('#writing-form button[type="submit"]').textContent = '更新作文';
+            
+            openModal('writingModal');
         }
 
         function openPhraseModal() {
